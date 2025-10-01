@@ -1,34 +1,43 @@
+// src/pages/ToDo.jsx
 import { useEffect, useState } from "react";
-import { supabase } from "../supabaseClient.js";
+import { supabase } from "../supabaseClient";
+import Card from "../components/Card";
 
 export default function ToDo() {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const fetchTasks = async () => {
+    setLoading(true);
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
-    if (!user) return;
-
+    if (!user) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
     const { data } = await supabase
       .from("todos")
       .select("*")
       .eq("user_id", user.id)
       .order("id", { ascending: false });
     setTasks(data || []);
+    setLoading(false);
   };
 
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
   const addTask = async () => {
-    if (!newTask) return;
+    if (!newTask.trim()) return;
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
     if (!user) return;
-
-    const { error } = await supabase
+    await supabase
       .from("todos")
-      .insert([{ title: newTask, user_id: user.id, completed: false }]);
-    if (error) console.error(error);
-
+      .insert([{ title: newTask.trim(), user_id: user.id, completed: false }]);
     setNewTask("");
     fetchTasks();
   };
@@ -43,55 +52,59 @@ export default function ToDo() {
     fetchTasks();
   };
 
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
   return (
-    <div className="p-6 bg-gray-900 min-h-screen text-white">
-      <h1 className="text-2xl font-bold mb-4">ToDo List</h1>
-
-      <div className="flex mb-4">
-        <input
-          type="text"
-          value={newTask}
-          onChange={(e) => setNewTask(e.target.value)}
-          className="border p-2 rounded mr-2 flex-1 text-black"
-          placeholder="New Task"
-        />
-        <button
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-          onClick={addTask}
-        >
-          Add
-        </button>
-      </div>
-
-      <ul>
-        {tasks.map((t) => (
-          <li
-            key={t.id}
-            className={`p-2 border-b flex justify-between items-center ${
-              t.completed ? "line-through text-gray-400" : ""
-            }`}
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-cyan-300 mb-4">ToDo</h1>
+      <Card>
+        <div className="flex gap-2 mb-4">
+          <input
+            value={newTask}
+            onChange={(e) => setNewTask(e.target.value)}
+            className="flex-1 p-2 rounded-md bg-white/5 text-white"
+            placeholder="New task..."
+          />
+          <button
+            onClick={addTask}
+            className="px-4 py-2 bg-cyan-500 text-black rounded-md"
           >
-            <span>{t.title}</span>
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={t.completed}
-                onChange={() => toggleTask(t.id, t.completed)}
-              />
-              <button
-                className="text-red-500 hover:text-red-400"
-                onClick={() => deleteTask(t.id)}
+            Add
+          </button>
+        </div>
+
+        {loading ? (
+          <p className="text-white">Loading…</p>
+        ) : (
+          <ul className="space-y-2">
+            {tasks.map((t) => (
+              <li
+                key={t.id}
+                className="flex items-center justify-between p-2 bg-white/2 rounded"
               >
-                Delete
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
+                <div
+                  className={`${
+                    t.completed ? "line-through text-gray-400" : "text-white"
+                  }`}
+                >
+                  {t.title}
+                </div>
+                <div className="flex gap-2 items-center">
+                  <input
+                    type="checkbox"
+                    checked={t.completed}
+                    onChange={() => toggleTask(t.id, t.completed)}
+                  />
+                  <button
+                    onClick={() => deleteTask(t.id)}
+                    className="text-red-400"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
     </div>
   );
 }

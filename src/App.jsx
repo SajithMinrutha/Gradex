@@ -1,10 +1,8 @@
-// src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Menu from "./components/Menu";
 import TopBar from "./components/TopBar";
-import LightRays from "./components/LightRays";
 
-// Pages
+// pages
 import Dashboard from "./pages/Dashboard";
 import Maths from "./pages/Maths";
 import Physics from "./pages/Physics";
@@ -17,27 +15,12 @@ import SignUp from "./pages/SignUp";
 function App() {
   return (
     <Router>
-      <div className="relative min-h-screen w-full bg-transparent">
-        <div className="absolute inset-0 z-0">
-          <LightRays
-            raysOrigin="bottom-center"
-            raysColor="#00ffff"
-            raysSpeed={1.5}
-            lightSpread={0.8}
-            rayLength={1.2}
-            followMouse={true}
-            mouseInfluence={0.1}
-            noiseAmount={0.1}
-            distortion={0.05}
-            className="custom-rays"
-          />
-        </div>
-
+      <div className="relative min-h-screen w-full bg-gradient-to-b from-[#030416] via-[#071029] to-[#071022] text-white overflow-hidden">
         <div className="relative z-10 flex w-full min-h-screen">
           <Menu />
           <div className="flex flex-col flex-1">
             <TopBar />
-            <div className="flex-1 overflow-auto p-4">
+            <main className="flex-1 overflow-auto">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/maths" element={<Maths />} />
@@ -48,7 +31,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<SignUp />} />
               </Routes>
-            </div>
+            </main>
           </div>
         </div>
       </div>

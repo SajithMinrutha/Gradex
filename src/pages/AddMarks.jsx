@@ -1,194 +1,119 @@
-import { useState, useEffect } from "react";
-import { supabase } from "../supabaseClient.js";
+// src/pages/AddMarks.jsx
+import { useEffect, useState } from "react";
+import { supabase } from "../supabaseClient";
+import Card from "../components/Card";
+import { useNavigate } from "react-router-dom";
 
 export default function AddMarks() {
-  const subjects = ["Maths", "Physics", "Chemistry"];
-  const [subject, setSubject] = useState(subjects[0]);
+  const [subjects, setSubjects] = useState(["Maths", "Physics", "Chemistry"]);
+  const [subject, setSubject] = useState("Maths");
   const [mcq, setMcq] = useState("");
   const [essay, setEssay] = useState("");
   const [message, setMessage] = useState("");
-  const [marks, setMarks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState(null);
+  const navigate = useNavigate();
 
-  // Fetch marks for selected subject
-  const fetchMarks = async () => {
-    setLoading(true);
+  useEffect(() => {
+    // try to load user subjects (optional)
+    let mounted = true;
+    (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+      if (!user) return;
+      const { data } = await supabase
+        .from("user_subjects")
+        .select("subject")
+        .eq("user_id", user.id);
+      if (mounted && data && data.length) {
+        setSubjects(data.map((r) => r.subject));
+        setSubject(data[0].subject);
+      }
+    })();
+    return () => (mounted = false);
+  }, []);
+
+  const handleAdd = async () => {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
     if (!user) {
-      setMarks([]);
-      setLoading(false);
+      alert("Not signed in");
       return;
     }
 
-    const { data, error } = await supabase
-      .from("marks")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("subject", subject)
-      .order("id", { ascending: false });
+    await supabase.from("marks").insert([
+      {
+        user_id: user.id,
+        subject,
+        mcq: parseInt(mcq || "0", 10),
+        essay: parseInt(essay || "0", 10),
+        message: message || null,
+      },
+    ]);
 
-    if (error) console.error(error);
-    else setMarks(data);
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchMarks();
-  }, [subject]);
-
-  // Add or update mark
-  const saveMark = async () => {
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData?.user;
-    if (!user) return;
-
-    if (editingId) {
-      // Update existing mark
-      const { error } = await supabase
-        .from("marks")
-        .update({
-          mcq: mcq ? parseInt(mcq) : 0,
-          essay: essay ? parseInt(essay) : 0,
-          message,
-        })
-        .eq("id", editingId);
-
-      if (error) console.error(error);
-      setEditingId(null);
-    } else {
-      // Insert new mark
-      const { error } = await supabase.from("marks").insert([
-        {
-          subject,
-          mcq: mcq ? parseInt(mcq) : 0,
-          essay: essay ? parseInt(essay) : 0,
-          message,
-          user_id: user.id,
-        },
-      ]);
-      if (error) console.error(error);
-    }
-
-    // Reset inputs
     setMcq("");
     setEssay("");
     setMessage("");
-    fetchMarks();
-  };
-
-  // Edit mark
-  const editMark = (mark) => {
-    setEditingId(mark.id);
-    setMcq(mark.mcq);
-    setEssay(mark.essay);
-    setMessage(mark.message || "");
-  };
-
-  // Delete mark
-  const deleteMark = async (id) => {
-    const { error } = await supabase.from("marks").delete().eq("id", id);
-    if (error) console.error(error);
-    else fetchMarks();
+    navigate("/");
   };
 
   return (
-    <div className="p-6 bg-gray-900 min-h-screen text-white">
-      <h1 className="text-3xl font-bold mb-6">Add Marks</h1>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-cyan-300 mb-4">Add Marks</h1>
+      <Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm text-gray-300">Subject</label>
+            <select
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="w-full p-2 rounded bg-white/5 text-white"
+            >
+              {subjects.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      {/* Subject Selection */}
-      <div className="mb-4">
-        <label className="mr-2 font-semibold">Select Subject:</label>
-        <select
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          className="p-2 rounded bg-gray-800 text-white border border-gray-700"
-        >
-          {subjects.map((sub) => (
-            <option key={sub} value={sub}>
-              {sub}
-            </option>
-          ))}
-        </select>
-      </div>
+          <div>
+            <label className="text-sm text-gray-300">MCQ</label>
+            <input
+              type="number"
+              value={mcq}
+              onChange={(e) => setMcq(e.target.value)}
+              className="w-full p-2 rounded bg-white/5 text-white"
+            />
+          </div>
 
-      {/* Inputs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-6">
-        <input
-          type="number"
-          placeholder="MCQ Marks"
-          value={mcq}
-          onChange={(e) => setMcq(e.target.value)}
-          className="p-2 rounded text-black"
-        />
-        <input
-          type="number"
-          placeholder="Essay Marks"
-          value={essay}
-          onChange={(e) => setEssay(e.target.value)}
-          className="p-2 rounded text-black"
-        />
-        <input
-          type="text"
-          placeholder="Optional Message"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="p-2 rounded text-black"
-        />
-        <button
-          onClick={saveMark}
-          className={`${
-            editingId
-              ? "bg-green-500 hover:bg-green-600"
-              : "bg-blue-500 hover:bg-blue-600"
-          } p-2 rounded font-semibold`}
-        >
-          {editingId ? "Update" : "Add"}
-        </button>
-      </div>
+          <div>
+            <label className="text-sm text-gray-300">Essay</label>
+            <input
+              type="number"
+              value={essay}
+              onChange={(e) => setEssay(e.target.value)}
+              className="w-full p-2 rounded bg-white/5 text-white"
+            />
+          </div>
 
-      {/* Marks Table */}
-      {loading ? (
-        <p>Loading marks...</p>
-      ) : marks.length === 0 ? (
-        <p>No marks added yet for {subject}.</p>
-      ) : (
-        <table className="w-full text-white border-collapse border border-gray-700">
-          <thead>
-            <tr className="border-b border-gray-700">
-              <th className="p-2">MCQ</th>
-              <th className="p-2">Essay</th>
-              <th className="p-2">Message</th>
-              <th className="p-2">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {marks.map((m) => (
-              <tr key={m.id} className="border-b border-gray-700">
-                <td className="p-2">{m.mcq}</td>
-                <td className="p-2">{m.essay}</td>
-                <td className="p-2">{m.message}</td>
-                <td className="p-2 flex space-x-2">
-                  <button
-                    onClick={() => editMark(m)}
-                    className="text-yellow-400 hover:text-yellow-300"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => deleteMark(m.id)}
-                    className="text-red-500 hover:text-red-400"
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+          <div>
+            <label className="text-sm text-gray-300">Optional message</label>
+            <input
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="w-full p-2 rounded bg-white/5 text-white"
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={handleAdd}
+            className="px-4 py-2 bg-cyan-500 text-black rounded-md"
+          >
+            Save Mark
+          </button>
+        </div>
+      </Card>
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { NavLink } from "react-router-dom";
 import HomeIcon from "@mui/icons-material/Home";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import AdjustIcon from "@mui/icons-material/Adjust";
-import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import AddBoxIcon from "@mui/icons-material/AddBox";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
+import AdjustIcon from "@mui/icons-material/Adjust";
 
 export default function Menu() {
   const menuItems = [
@@ -16,28 +16,32 @@ export default function Menu() {
   ];
 
   return (
-    <div className="flex flex-col w-20 sm:w-48 md:w-56 shadow-md min-h-screen bg-gray-800 text-white">
-      <div className="flex items-center justify-center sm:justify-start space-x-0 sm:space-x-3 py-4 px-2">
-        <AdjustIcon fontSize="large" />
-        <span className="hidden sm:inline text-3xl font-bold">GRADEXA</span>
+    <aside className="flex flex-col w-20 sm:w-48 md:w-56 min-h-screen p-4 gap-4 bg-transparent">
+      <div className="bg-[#071029]/70 backdrop-blur-lg border border-white/6 rounded-xl p-3 flex items-center gap-3">
+        <AdjustIcon fontSize="large" sx={{ color: "#60f0ff" }} />
+        <span className="hidden sm:inline text-2xl font-bold text-white">
+          GRADEXA
+        </span>
       </div>
 
-      <nav className="flex flex-col space-y-2 mt-4">
+      <nav className="flex flex-col gap-2">
         {menuItems.map((item) => (
           <NavLink
             key={item.name}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center justify-center sm:justify-start space-x-0 sm:space-x-3 px-3 py-2 rounded-lg transition-colors duration-200 ${
-                isActive ? "bg-blue-500/40" : "hover:bg-blue-500/20"
+              `flex items-center gap-3 p-2 rounded-lg transition ${
+                isActive
+                  ? "bg-cyan-500/20 border-l-4 border-cyan-400 text-cyan-200"
+                  : "hover:bg-white/5 text-gray-200"
               }`
             }
           >
-            <div className="p-1 rounded-md bg-blue-500">{item.icon}</div>
-            <span className="hidden sm:inline text-base">{item.name}</span>
+            <div className="text-cyan-400">{item.icon}</div>
+            <span className="hidden sm:inline">{item.name}</span>
           </NavLink>
         ))}
       </nav>
-    </div>
+    </aside>
   );
 }

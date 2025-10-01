@@ -1,3 +1,4 @@
+// src/pages/Dashboard.jsx
 import CenterArea from "../components/CenterArea";
 import Card from "../components/Card";
 import { useEffect, useState } from "react";
@@ -16,7 +17,7 @@ export default function Dashboard() {
       .from("todos")
       .select("*")
       .eq("user_id", user.id)
-      .order("id", { ascending: false });
+      .order("created_at", { ascending: false });
     setTodos(data || []);
   };
 
@@ -29,6 +30,31 @@ export default function Dashboard() {
     fetchTodos();
   };
 
+  // priority color small dot
+  const priorityDot = (p) => {
+    if (p === "High")
+      return (
+        <span className="inline-block w-3 h-3 rounded-full bg-red-400 mr-2" />
+      );
+    if (p === "Medium")
+      return (
+        <span className="inline-block w-3 h-3 rounded-full bg-amber-400 mr-2" />
+      );
+    return (
+      <span className="inline-block w-3 h-3 rounded-full bg-green-400 mr-2" />
+    );
+  };
+
+  // sort: High > Medium > Low then not completed first
+  const sortedTodos = [...todos].sort((a, b) => {
+    const pr = { High: 3, Medium: 2, Low: 1 };
+    const pa = pr[a.priority] || 2;
+    const pb = pr[b.priority] || 2;
+    if (pa !== pb) return pb - pa;
+    if (a.completed === b.completed) return 0;
+    return a.completed ? 1 : -1;
+  });
+
   return (
     <div className="px-6 py-6 space-y-6">
       <div>
@@ -36,51 +62,69 @@ export default function Dashboard() {
         <p className="text-gray-300">Overview of your subjects and tasks.</p>
       </div>
 
-      {/* Graphs */}
+      {/* Graphs (dashboard) */}
       <CenterArea showStats={true} />
 
       {/* Quick Actions */}
-      <Card title="Quick Actions">
-        <div className="flex flex-col gap-2">
-          <button
-            onClick={() => navigate("/add-marks")}
-            className="px-4 py-2 bg-cyan-500 text-black rounded-md"
-          >
-            Add Marks
-          </button>
-          <button
-            onClick={() => navigate("/todo")}
-            className="px-4 py-2 bg-white/5 text-white rounded-md"
-          >
-            Manage ToDos
-          </button>
-        </div>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => navigate("/add-marks")}
+              className="px-4 py-2 bg-cyan-500 text-black rounded-md"
+            >
+              Add Marks
+            </button>
+            <button
+              onClick={() => navigate("/todo")}
+              className="px-4 py-2 bg-white/5 text-white rounded-md"
+            >
+              Manage ToDos
+            </button>
+            <button
+              onClick={() => navigate("/plan-studying")}
+              className="px-4 py-2 bg-white/5 text-white rounded-md"
+            >
+              Plan Studying
+            </button>
+          </div>
+        </Card>
 
-      {/* ToDos inline */}
-      <Card title="Your ToDos">
-        {todos.length === 0 ? (
-          <p className="text-gray-400">No todos yet.</p>
-        ) : (
-          <ul className="space-y-2">
-            {todos.map((t) => (
-              <li
-                key={t.id}
-                className={`flex justify-between p-2 rounded ${
-                  t.completed ? "line-through text-gray-500" : "text-white"
-                }`}
-              >
-                {t.title}
-                <input
-                  type="checkbox"
-                  checked={t.completed}
-                  onChange={() => toggleTodo(t.id, t.completed)}
-                />
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+        {/* ToDos inline */}
+        <Card title="Your ToDos">
+          {sortedTodos.length === 0 ? (
+            <p className="text-gray-400">No todos yet.</p>
+          ) : (
+            <ul className="space-y-2">
+              {sortedTodos.map((t) => (
+                <li
+                  key={t.id}
+                  className={`flex items-center justify-between p-2 rounded ${
+                    t.completed ? "line-through text-gray-500" : "text-white"
+                  }`}
+                >
+                  <div className="flex items-center">
+                    {priorityDot(t.priority)}
+                    <span>{t.title}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={t.completed}
+                      onChange={() => toggleTodo(t.id, t.completed)}
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+
+        {/* Placeholder */}
+        <Card title="Shortcuts">
+          <p className="text-gray-300">Useful links and summaries here.</p>
+        </Card>
+      </div>
     </div>
   );
 }

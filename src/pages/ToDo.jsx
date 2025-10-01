@@ -6,24 +6,24 @@ import Card from "../components/Card";
 export default function ToDo() {
   const [tasks, setTasks] = useState([]);
   const [newTask, setNewTask] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [priority, setPriority] = useState("Medium");
 
   const fetchTasks = async () => {
-    setLoading(true);
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
-    if (!user) {
-      setTasks([]);
-      setLoading(false);
-      return;
-    }
-    const { data } = await supabase
+    if (!user) return;
+
+    const { data, error } = await supabase
       .from("todos")
       .select("*")
       .eq("user_id", user.id)
-      .order("id", { ascending: false });
-    setTasks(data || []);
-    setLoading(false);
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+    } else {
+      setTasks(data || []);
+    }
   };
 
   useEffect(() => {
@@ -34,23 +34,54 @@ export default function ToDo() {
     if (!newTask.trim()) return;
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
-    if (!user) return;
-    await supabase
-      .from("todos")
-      .insert([{ title: newTask.trim(), user_id: user.id, completed: false }]);
+    if (!user) return alert("Sign in required");
+
+    const { error } = await supabase.from("todos").insert([
+      {
+        title: newTask.trim(),
+        priority,
+        user_id: user.id,
+        completed: false, // ✅ make sure default
+      },
+    ]);
+
+    if (error) console.error(error);
+
     setNewTask("");
+    setPriority("Medium");
     fetchTasks();
   };
 
-  const toggleTask = async (id, completed) => {
-    await supabase.from("todos").update({ completed: !completed }).eq("id", id);
+  const toggle = async (id, completed) => {
+    const { error } = await supabase
+      .from("todos")
+      .update({ completed: !completed })
+      .eq("id", id);
+
+    if (error) console.error(error);
+
     fetchTasks();
   };
 
   const deleteTask = async (id) => {
-    await supabase.from("todos").delete().eq("id", id);
+    if (!confirm("Delete task?")) return;
+    const { error } = await supabase.from("todos").delete().eq("id", id);
+    if (error) console.error(error);
     fetchTasks();
   };
+
+  const colorFor = (p) =>
+    p === "High"
+      ? "bg-red-400"
+      : p === "Medium"
+      ? "bg-amber-400"
+      : "bg-green-400";
+
+  // sort high first
+  const sorted = [...tasks].sort((a, b) => {
+    const map = { High: 3, Medium: 2, Low: 1 };
+    return (map[b.priority] || 2) - (map[a.priority] || 2);
+  });
 
   return (
     <div className="p-6">
@@ -60,50 +91,65 @@ export default function ToDo() {
           <input
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
-            className="flex-1 p-2 rounded-md bg-white/5 text-white"
-            placeholder="New task..."
+            className="flex-1 p-2 rounded bg-white/5 text-white"
+            placeholder="New Task"
           />
+          <select
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+            className="p-2 rounded bg-white/5 text-white"
+          >
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+          </select>
           <button
             onClick={addTask}
-            className="px-4 py-2 bg-cyan-500 text-black rounded-md"
+            className="px-4 py-2 bg-cyan-500 text-black rounded"
           >
             Add
           </button>
         </div>
 
-        {loading ? (
-          <p className="text-white">Loading…</p>
-        ) : (
-          <ul className="space-y-2">
-            {tasks.map((t) => (
-              <li
-                key={t.id}
-                className="flex items-center justify-between p-2 bg-white/2 rounded"
-              >
-                <div
-                  className={`${
+        <ul className="space-y-2">
+          {sorted.map((t) => (
+            <li
+              key={t.id}
+              className="flex items-center justify-between p-2 bg-white/2 rounded"
+            >
+              <div className="flex items-center gap-3">
+                <span
+                  className={`${colorFor(
+                    t.priority
+                  )} inline-block w-3 h-3 rounded-full`}
+                />
+                <span
+                  className={
                     t.completed ? "line-through text-gray-400" : "text-white"
-                  }`}
+                  }
                 >
                   {t.title}
-                </div>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="checkbox"
-                    checked={t.completed}
-                    onChange={() => toggleTask(t.id, t.completed)}
-                  />
-                  <button
-                    onClick={() => deleteTask(t.id)}
-                    className="text-red-400"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+                </span>
+              </div>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="checkbox"
+                  checked={t.completed}
+                  onChange={() => toggle(t.id, t.completed)}
+                />
+                <button
+                  onClick={() => deleteTask(t.id)}
+                  className="text-red-400"
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+          {tasks.length === 0 && (
+            <li className="text-gray-400">No tasks yet.</li>
+          )}
+        </ul>
       </Card>
     </div>
   );

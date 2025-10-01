@@ -1,3 +1,4 @@
+// src/components/TopBar.jsx
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import { useNavigate } from "react-router-dom";
@@ -7,11 +8,20 @@ export default function TopBar() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let mounted = true;
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
-      setUser(data?.user || null);
+      if (mounted) setUser(data?.user || null);
+      // subscribe to changes (optional)
     };
     getUser();
+    const sub = supabase.auth.onAuthStateChange((_event, session) => {
+      if (mounted) setUser(session?.user || null);
+    });
+    return () => {
+      mounted = false;
+      sub?.subscription?.unsubscribe?.();
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -31,7 +41,7 @@ export default function TopBar() {
       <div className="flex items-center gap-4">
         {user ? (
           <>
-            <span className="text-gray-300">{user.email}</span>
+            <span className="text-gray-300 hidden sm:inline">{user.email}</span>
             <button
               onClick={handleLogout}
               className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30"
@@ -40,12 +50,20 @@ export default function TopBar() {
             </button>
           </>
         ) : (
-          <button
-            onClick={() => navigate("/login")}
-            className="px-3 py-2 bg-white/6 text-white rounded-lg hover:bg-white/10"
-          >
-            Sign In
-          </button>
+          <>
+            <button
+              onClick={() => navigate("/login")}
+              className="px-3 py-2 bg-white/6 text-white rounded-lg hover:bg-white/10"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => navigate("/signup")}
+              className="px-3 py-2 bg-cyan-500 text-black rounded-lg hover:bg-cyan-400"
+            >
+              Sign Up
+            </button>
+          </>
         )}
       </div>
     </header>

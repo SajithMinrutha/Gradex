@@ -1,52 +1,67 @@
 // src/pages/AuthForm.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
-import { Mail, Lock, UserPlus, LogIn } from "lucide-react";
+import { Mail, Lock, UserPlus, LogIn, CheckCircle } from "lucide-react";
 
 export default function AuthForm({ mode = "signin" }) {
-  const [authMode, setAuthMode] = useState(mode); // 'signin' or 'signup'
+  const [authMode, setAuthMode] = useState(mode); // "signin" | "signup"
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   const [loading, setLoading] = useState(false);
-
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const check = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session) navigate("/");
+    };
+    check();
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
+    setSuccessMsg("");
     setLoading(true);
 
     try {
-      let res;
-
       if (authMode === "signin") {
-        res = await supabase.auth.signInWithPassword({ email, password });
-        if (res.error) throw res.error;
-      } else {
-        // Sign Up Mode
-        if (password !== confirmPassword) {
-          throw new Error("Passwords do not match.");
-        }
-
-        // Try to check if user already exists
-        const { data: existingUser } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
+        if (error) throw error;
 
-        if (existingUser?.user) {
-          throw new Error("This email is already registered. Please sign in.");
+        // Note: Supabase doesn't always return email_confirmed_at in client; do a user fetch to check
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData?.user;
+        if (user && !user.email_confirmed_at) {
+          // sign out the session (avoid partially logged in state)
+          await supabase.auth.signOut();
+          throw new Error(
+            "Please verify your email first. Check your inbox for the verification link."
+          );
         }
 
-        // Continue with sign up
-        res = await supabase.auth.signUp({ email, password });
-        if (res.error) throw res.error;
+        navigate("/");
+      } else {
+        // signup
+        if (password !== confirmPassword)
+          throw new Error("Passwords do not match.");
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: `${window.location.origin}/` },
+        });
+        if (error) throw error;
+        setSuccessMsg(
+          "Account created. Please verify your email before signing in."
+        );
       }
-
-      navigate("/");
     } catch (err) {
       setErrorMsg(err.message);
     } finally {
@@ -55,64 +70,67 @@ export default function AuthForm({ mode = "signin" }) {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900 text-white px-4">
-      <div className="bg-gray-800 shadow-lg rounded-xl p-8 w-full max-w-md">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-[#030416] via-[#071029] to-[#071022]">
+      <div className="bg-[#071029]/70 backdrop-blur-lg border border-white/6 rounded-2xl p-8 w-full max-w-md text-white">
         <div className="flex justify-center mb-6">
           {authMode === "signin" ? (
-            <LogIn size={48} className="text-blue-400" />
+            <LogIn size={48} className="text-cyan-400" />
           ) : (
             <UserPlus size={48} className="text-green-400" />
           )}
         </div>
 
         <h1 className="text-2xl font-bold text-center mb-4">
-          {authMode === "signin" ? "Sign In" : "Sign Up"}
+          {authMode === "signin" ? "Sign In" : "Create account"}
         </h1>
 
         {errorMsg && (
-          <div className="bg-red-500 text-white p-2 mb-4 rounded">
+          <div className="bg-red-500/20 text-red-300 p-2 mb-3 rounded">
             {errorMsg}
+          </div>
+        )}
+        {successMsg && (
+          <div className="bg-green-600/20 text-green-200 p-2 mb-3 rounded flex items-center">
+            <CheckCircle size={18} className="mr-2" />
+            {successMsg}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email */}
-          <div className="flex items-center bg-gray-700 rounded px-3 py-2">
-            <Mail className="mr-2 text-gray-400" size={20} />
+          <div className="flex items-center gap-3 bg-white/5 rounded px-3 py-2">
+            <Mail size={18} className="text-cyan-300" />
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-transparent w-full outline-none text-white"
               required
+              className="bg-transparent outline-none w-full"
             />
           </div>
 
-          {/* Password */}
-          <div className="flex items-center bg-gray-700 rounded px-3 py-2">
-            <Lock className="mr-2 text-gray-400" size={20} />
+          <div className="flex items-center gap-3 bg-white/5 rounded px-3 py-2">
+            <Lock size={18} className="text-cyan-300" />
             <input
               type="password"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="bg-transparent w-full outline-none text-white"
               required
+              className="bg-transparent outline-none w-full"
             />
           </div>
 
-          {/* Confirm Password (only for signup) */}
           {authMode === "signup" && (
-            <div className="flex items-center bg-gray-700 rounded px-3 py-2">
-              <Lock className="mr-2 text-gray-400" size={20} />
+            <div className="flex items-center gap-3 bg-white/5 rounded px-3 py-2">
+              <Lock size={18} className="text-cyan-300" />
               <input
                 type="password"
-                placeholder="Confirm Password"
+                placeholder="Confirm password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="bg-transparent w-full outline-none text-white"
                 required
+                className="bg-transparent outline-none w-full"
               />
             </div>
           )}
@@ -120,28 +138,29 @@ export default function AuthForm({ mode = "signin" }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold transition"
+            className="w-full py-2 bg-cyan-500 text-black rounded font-semibold"
           >
             {loading
-              ? "Loading..."
+              ? "Please wait..."
               : authMode === "signin"
-              ? "Sign In"
-              : "Sign Up"}
+              ? "Sign in"
+              : "Create account"}
           </button>
         </form>
 
-        {/* Toggle Auth Mode */}
-        <p className="mt-4 text-center text-gray-400">
+        <p className="mt-4 text-center text-gray-300">
           {authMode === "signin"
             ? "Don't have an account?"
             : "Already have an account?"}{" "}
           <button
-            className="text-blue-400 hover:underline"
-            onClick={() =>
-              setAuthMode(authMode === "signin" ? "signup" : "signin")
-            }
+            onClick={() => {
+              setAuthMode(authMode === "signin" ? "signup" : "signin");
+              setErrorMsg("");
+              setSuccessMsg("");
+            }}
+            className="text-cyan-400 ml-1"
           >
-            {authMode === "signin" ? "Sign Up" : "Sign In"}
+            {authMode === "signin" ? "Sign up" : "Sign in"}
           </button>
         </p>
       </div>

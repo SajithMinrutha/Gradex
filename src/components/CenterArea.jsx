@@ -1,3 +1,4 @@
+// src/components/CenterArea.jsx
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import {
@@ -11,6 +12,7 @@ import {
 } from "recharts";
 import Card from "./Card";
 
+// neon colors
 const neonColors = {
   Maths: { MCQ: "#3b82f6", Essay: "#7c3aed", Total: "#60a5fa" },
   Physics: { MCQ: "#06b6d4", Essay: "#0891b2", Total: "#22d3ee" },
@@ -19,15 +21,36 @@ const neonColors = {
 
 const defaultSubjects = ["Maths", "Physics", "Chemistry"];
 
-export default function CenterArea({ subject, showStats = true }) {
+function calcStats(data) {
+  if (!data || data.length === 0) return { avg: "-", std: "-", deltaPct: "-" };
+  const totals = data.map((d) => d.Total);
+  const avg = totals.reduce((a, b) => a + b, 0) / totals.length;
+  const variance =
+    totals.reduce((s, v) => s + Math.pow(v - avg, 2), 0) / totals.length;
+  const std = Math.sqrt(variance);
+  const last = totals[totals.length - 1];
+  const prev = totals.length > 1 ? totals[totals.length - 2] : last;
+  const deltaPct =
+    prev === 0 ? "-" : (((last - prev) / prev) * 100).toFixed(1) + "%";
+  return {
+    avg: Math.round(avg * 10) / 10,
+    std: Math.round(std * 10) / 10,
+    deltaPct,
+  };
+}
+
+export default function CenterArea({
+  subject,
+  showStats = true,
+  chartHeight = 160,
+}) {
   const [marksData, setMarksData] = useState({});
   const [loading, setLoading] = useState(true);
-
   const subjects = subject ? [subject] : defaultSubjects;
 
   useEffect(() => {
     let mounted = true;
-    const fetchMarks = async () => {
+    const fetchAll = async () => {
       setLoading(true);
       const { data: userData } = await supabase.auth.getUser();
       const user = userData?.user;
@@ -36,51 +59,42 @@ export default function CenterArea({ subject, showStats = true }) {
         setLoading(false);
         return;
       }
-      const { data } = await supabase
+
+      const { data, error } = await supabase
         .from("marks")
         .select("*")
         .eq("user_id", user.id)
         .order("id", { ascending: true });
 
+      if (error) {
+        console.error(error);
+        setLoading(false);
+        return;
+      }
+
       const grouped = {};
-      subjects.forEach((s) => {
+      for (const s of subjects) {
         const list = (data || []).filter((r) => r.subject === s);
         grouped[s] = list.map((m, idx) => ({
+          id: m.id,
           exam: `Test ${idx + 1}`,
-          MCQ: m.mcq,
-          Essay: m.essay,
-          Total: m.mcq + m.essay,
+          MCQ: m.mcq ?? 0,
+          Essay: m.essay ?? 0,
+          Total: (m.mcq ?? 0) + (m.essay ?? 0),
         }));
-      });
+      }
       if (mounted) {
         setMarksData(grouped);
         setLoading(false);
       }
     };
-    fetchMarks();
+    fetchAll();
     return () => {
       mounted = false;
     };
   }, [subject]);
 
-  const calculateStats = (data) => {
-    if (!data?.length) return { highest: "-", recent: "-", trend: "-" };
-    const totals = data.map((d) => d.Total);
-    const highest = Math.max(...totals);
-    const recent = totals[totals.length - 1];
-    const prev = totals[totals.length - 2];
-    const trend =
-      totals.length > 1
-        ? recent > prev
-          ? "⬆️ Improving"
-          : recent < prev
-          ? "⬇️ Declining"
-          : "➡️ Steady"
-        : "-";
-    return { highest, recent, trend };
-  };
-
-  if (loading) return <div className="text-white p-6">Loading…</div>;
+  if (loading) return <div className="p-6 text-white">Loading...</div>;
 
   return (
     <div
@@ -90,53 +104,73 @@ export default function CenterArea({ subject, showStats = true }) {
     >
       {subjects.map((s) => {
         const data = marksData[s] || [];
-        const stats = calculateStats(data);
+        const stats = calcStats(data);
         return (
           <Card key={s}>
-            <h2 className="text-lg font-semibold text-white mb-2">{s}</h2>
-            <div className="w-full h-48">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">{s}</h3>
+            </div>
+
+            {/* dynamic height for graphs */}
+            <div className="w-full" style={{ height: chartHeight }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={data}>
                   <XAxis
                     dataKey="exam"
-                    stroke="#93c5fd"
-                    tickLine={false}
                     axisLine={false}
+                    tickLine={false}
+                    stroke="#93c5fd"
                   />
-                  <YAxis stroke="#93c5fd" tickLine={false} axisLine={false} />
+                  <YAxis axisLine={false} tickLine={false} stroke="#93c5fd" />
                   <Tooltip
                     contentStyle={{
                       background: "rgba(0,0,0,0.7)",
                       color: "#fff",
                     }}
                   />
-                  <Legend />
+                  <Legend
+                    verticalAlign="top"
+                    wrapperStyle={{ color: "#fff" }}
+                  />
                   <Area
                     type="monotone"
                     dataKey="MCQ"
                     stroke={neonColors[s].MCQ}
-                    fill={neonColors[s].MCQ + "33"}
+                    fill={neonColors[s].MCQ + "22"}
+                    strokeWidth={2}
                   />
                   <Area
                     type="monotone"
                     dataKey="Essay"
                     stroke={neonColors[s].Essay}
-                    fill={neonColors[s].Essay + "33"}
+                    fill={neonColors[s].Essay + "22"}
+                    strokeWidth={2}
                   />
                   <Area
                     type="monotone"
                     dataKey="Total"
                     stroke={neonColors[s].Total}
-                    fill={neonColors[s].Total + "33"}
+                    fill={neonColors[s].Total + "18"}
+                    strokeWidth={2}
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
+
             {showStats && (
-              <div className="mt-2 text-gray-200 text-sm">
-                <div>Highest: {stats.highest}</div>
-                <div>Recent: {stats.recent}</div>
-                <div>Trend: {stats.trend}</div>
+              <div className="mt-3 text-sm text-gray-200">
+                <div className="flex justify-between">
+                  <span>Average</span>
+                  <strong>{stats.avg}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span>Std Dev</span>
+                  <strong>{stats.std}</strong>
+                </div>
+                <div className="flex justify-between">
+                  <span>Last Δ</span>
+                  <strong>{stats.deltaPct}</strong>
+                </div>
               </div>
             )}
           </Card>

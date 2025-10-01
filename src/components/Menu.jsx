@@ -1,9 +1,11 @@
+// src/components/Menu.jsx
 import { NavLink } from "react-router-dom";
 import HomeIcon from "@mui/icons-material/Home";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import AddBoxIcon from "@mui/icons-material/AddBox";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import AdjustIcon from "@mui/icons-material/Adjust";
+import ScheduleIcon from "@mui/icons-material/Schedule";
 
 export default function Menu() {
   const menuItems = [
@@ -13,6 +15,7 @@ export default function Menu() {
     { name: "Chemistry", icon: <BarChartIcon />, path: "/chemistry" },
     { name: "Add Marks", icon: <AddBoxIcon />, path: "/add-marks" },
     { name: "ToDo", icon: <TaskAltIcon />, path: "/todo" },
+    { name: "Study Planner", icon: <ScheduleIcon />, path: "/plan-studying" },
   ];
 
   return (

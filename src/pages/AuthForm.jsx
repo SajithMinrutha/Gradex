@@ -77,7 +77,7 @@ export default function AuthForm({ mode = "signin" }) {
           email,
           password,
           options: {
-            emailRedirectTo: "https://gradexa.vercel.app/auth/callback",
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
         if (error) throw error;

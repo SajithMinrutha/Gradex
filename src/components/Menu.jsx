@@ -12,6 +12,24 @@ import AdjustIcon from "@mui/icons-material/Adjust";
 import ScheduleIcon from "@mui/icons-material/Schedule";
 import SettingsIcon from "@mui/icons-material/Settings";
 
+function MenuItem({ item }) {
+  return (
+    <NavLink
+      to={item.path}
+      className={({ isActive }) =>
+        `flex items-center gap-3 p-2 rounded-lg transition ${
+          isActive
+            ? "bg-cyan-500/20 border-l-4 border-cyan-400 text-cyan-200"
+            : "hover:bg-white/5 text-gray-200"
+        }`
+      }
+    >
+      <div className="text-cyan-400">{item.icon}</div>
+      <span className="hidden sm:inline">{item.name}</span>
+    </NavLink>
+  );
+}
+
 export default function Menu() {
   const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -53,7 +71,7 @@ export default function Menu() {
 
     return () => {
       mounted = false;
-      listener.subscription.unsubscribe();
+      listener?.subscription?.unsubscribe();
     };
   }, []);
 
@@ -79,66 +97,26 @@ export default function Menu() {
       </div>
 
       <nav className="flex flex-col gap-2">
-        {/* Dashboard first */}
-        {staticItems
-          .filter((item) => item.name === "Dashboard")
-          .map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.path}
-              className={({ isActive }) =>
-                `flex items-center gap-3 p-2 rounded-lg transition ${
-                  isActive
-                    ? "bg-cyan-500/20 border-l-4 border-cyan-400 text-cyan-200"
-                    : "hover:bg-white/5 text-gray-200"
-                }`
-              }
-            >
-              <div className="text-cyan-400">{item.icon}</div>
-              <span className="hidden sm:inline">{item.name}</span>
-            </NavLink>
-          ))}
+        {/* Dashboard */}
+        <MenuItem item={staticItems[0]} />
 
         {/* Dynamic Subjects */}
         {!loading &&
           subjects.map((s) => (
-            <NavLink
+            <MenuItem
               key={s.id}
-              to={`/${s.name.toLowerCase()}`}
-              className={({ isActive }) =>
-                `flex items-center gap-3 p-2 rounded-lg transition ${
-                  isActive
-                    ? "bg-cyan-500/20 border-l-4 border-cyan-400 text-cyan-200"
-                    : "hover:bg-white/5 text-gray-200"
-                }`
-              }
-            >
-              <div className="text-cyan-400">
-                <BarChartIcon />
-              </div>
-              <span className="hidden sm:inline">{s.name}</span>
-            </NavLink>
+              item={{
+                name: s.name,
+                icon: <BarChartIcon />,
+                path: `/${s.name.toLowerCase()}`,
+              }}
+            />
           ))}
 
-        {/* Other static items */}
-        {staticItems
-          .filter((item) => item.name !== "Dashboard")
-          .map((item) => (
-            <NavLink
-              key={item.name}
-              to={item.path}
-              className={({ isActive }) =>
-                `flex items-center gap-3 p-2 rounded-lg transition ${
-                  isActive
-                    ? "bg-cyan-500/20 border-l-4 border-cyan-400 text-cyan-200"
-                    : "hover:bg-white/5 text-gray-200"
-                }`
-              }
-            >
-              <div className="text-cyan-400">{item.icon}</div>
-              <span className="hidden sm:inline">{item.name}</span>
-            </NavLink>
-          ))}
+        {/* Remaining static items */}
+        {staticItems.slice(1).map((item) => (
+          <MenuItem key={item.name} item={item} />
+        ))}
       </nav>
     </aside>
   );

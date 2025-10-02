@@ -70,7 +70,9 @@ export default function CenterArea({ showStats = false, subject }) {
   return (
     <div
       className={`grid ${
-        subjects.length > 1 ? "grid-cols-1 md:grid-cols-3 gap-6" : ""
+        subjects.length > 1
+          ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          : "grid-cols-1"
       }`}
     >
       {subjects.map((sub) => {
@@ -79,40 +81,44 @@ export default function CenterArea({ showStats = false, subject }) {
         return (
           <div
             key={sub}
-            className="bg-gray-800 p-4 rounded-xl shadow-xl flex flex-col"
+            className="bg-gray-800 p-4 rounded-xl shadow-xl flex flex-col w-full"
           >
-            <h2 className="text-xl font-semibold mb-4">{sub}</h2>
-            <ResponsiveContainer width="100%" height={250}>
-              <AreaChart data={data}>
-                <XAxis dataKey="exam" axisLine={false} tickLine={false} />
-                <YAxis axisLine={false} tickLine={false} />
-                <Tooltip />
-                <Legend verticalAlign="top" />
-                <Area
-                  type="monotone"
-                  dataKey="MCQ"
-                  stroke={colors[sub].MCQ}
-                  fill={colors[sub].MCQ + "33"}
-                  strokeWidth={2}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="Essay"
-                  stroke={colors[sub].Essay}
-                  fill={colors[sub].Essay + "33"}
-                  strokeWidth={2}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="Total"
-                  stroke={colors[sub].Total}
-                  fill={colors[sub].Total + "33"}
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            <h2 className="text-lg sm:text-xl font-semibold mb-4 text-center sm:text-left">
+              {sub}
+            </h2>
+            <div className="w-full h-[200px] sm:h-[250px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={data}>
+                  <XAxis dataKey="exam" axisLine={false} tickLine={false} />
+                  <YAxis axisLine={false} tickLine={false} />
+                  <Tooltip />
+                  <Legend verticalAlign="top" />
+                  <Area
+                    type="monotone"
+                    dataKey="MCQ"
+                    stroke={colors[sub].MCQ}
+                    fill={colors[sub].MCQ + "33"}
+                    strokeWidth={2}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="Essay"
+                    stroke={colors[sub].Essay}
+                    fill={colors[sub].Essay + "33"}
+                    strokeWidth={2}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="Total"
+                    stroke={colors[sub].Total}
+                    fill={colors[sub].Total + "33"}
+                    strokeWidth={2}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
             {showStats && (
-              <div className="mt-4 text-white space-y-1">
+              <div className="mt-4 text-white space-y-1 text-sm sm:text-base">
                 <p>
                   <span className="font-semibold">Highest Mark:</span>{" "}
                   {stats.highest}

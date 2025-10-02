@@ -12,39 +12,32 @@ export default function Settings() {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
 
-  // Fetch profile (from names) + subjects
+  // Fetch profile + subjects
   const fetchProfileAndSubjects = async (currentUser) => {
     if (!currentUser) return;
 
-    // ✅ Fetch from names table
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from("names")
       .select("name, birthday")
       .eq("id", currentUser.id)
       .single();
-
-    if (profileError) {
-      console.error("Error fetching profile:", profileError.message);
-    }
 
     if (profile) {
       setName(profile.name || "");
       setBirthday(profile.birthday || "");
     }
 
-    // ✅ Subjects stay the same
     const { data: subs } = await supabase
       .from("subjects")
       .select("*")
       .eq("user_id", currentUser.id)
       .order("id", { ascending: true });
+
     setSubjects(subs || []);
   };
 
   useEffect(() => {
     let mounted = true;
-
-    // Initial user fetch
     const init = async () => {
       const { data } = await supabase.auth.getUser();
       const currentUser = data?.user;
@@ -54,7 +47,6 @@ export default function Settings() {
     };
     init();
 
-    // Auth listener
     const { data: authSub } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         const currentUser = session?.user || null;
@@ -77,7 +69,6 @@ export default function Settings() {
   const saveProfile = async () => {
     if (!user) return;
 
-    // ✅ Save into names table instead of profiles
     const { error } = await supabase
       .from("names")
       .upsert({ id: user.id, name, birthday }, { onConflict: "id" });
@@ -113,20 +104,22 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-cyan-300 mb-6">Settings</h1>
+    <div className="p-4 sm:p-6">
+      <h1 className="text-xl sm:text-2xl font-bold text-cyan-300 mb-6">
+        Settings
+      </h1>
 
-      {/* Inline message like before */}
+      {/* Inline message */}
       {message && (
         <div
-          className={`mb-4 flex items-center gap-2 text-sm ${
+          className={`mb-4 flex items-center gap-2 text-sm sm:text-base ${
             isError ? "text-red-500" : "text-green-400"
           }`}
         >
           {isError ? (
-            <XCircleIcon className="w-5 h-5" />
+            <XCircleIcon className="w-5 h-5 sm:w-6 sm:h-6" />
           ) : (
-            <CheckCircleIcon className="w-5 h-5" />
+            <CheckCircleIcon className="w-5 h-5 sm:w-6 sm:h-6" />
           )}
           <span>{message}</span>
         </div>
@@ -140,7 +133,7 @@ export default function Settings() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full p-2 rounded bg-white/5 mb-3 text-white"
+            className="w-full p-2 rounded bg-white/5 mb-3 text-white text-sm sm:text-base"
           />
 
           <label className="text-sm text-gray-300">Birthday</label>
@@ -148,12 +141,12 @@ export default function Settings() {
             type="date"
             value={birthday}
             onChange={(e) => setBirthday(e.target.value)}
-            className="w-full p-2 rounded bg-white/5 mb-3 text-white"
+            className="w-full p-2 rounded bg-white/5 mb-3 text-white text-sm sm:text-base"
           />
 
           <button
             onClick={saveProfile}
-            className="px-4 py-2 bg-cyan-500 text-black rounded cursor-pointer"
+            className="px-4 py-2 bg-cyan-500 text-black rounded cursor-pointer text-sm sm:text-base"
           >
             Save
           </button>
@@ -162,16 +155,16 @@ export default function Settings() {
         {/* Subjects */}
         <Card>
           <h2 className="text-lg font-semibold text-white mb-3">Subjects</h2>
-          <div className="flex gap-2 mb-3">
+          <div className="flex flex-col sm:flex-row gap-2 mb-3">
             <input
               value={newSubject}
               onChange={(e) => setNewSubject(e.target.value)}
               placeholder="New subject"
-              className="flex-1 p-2 rounded bg-white/5 text-white"
+              className="flex-1 p-2 rounded bg-white/5 text-white text-sm sm:text-base"
             />
             <button
               onClick={addSubject}
-              className="px-3 py-2 bg-cyan-500 text-black rounded"
+              className="px-3 py-2 bg-cyan-500 text-black rounded text-sm sm:text-base"
             >
               Add
             </button>
@@ -182,19 +175,21 @@ export default function Settings() {
               subjects.map((s) => (
                 <li
                   key={s.id}
-                  className="flex items-center justify-between p-2 bg-white/5 rounded"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-2 bg-white/5 rounded gap-2"
                 >
-                  <span>{s.name}</span>
+                  <span className="text-sm sm:text-base">{s.name}</span>
                   <button
                     onClick={() => removeSubject(s.id)}
-                    className="text-red-400"
+                    className="text-red-400 text-sm sm:text-base"
                   >
                     Remove
                   </button>
                 </li>
               ))
             ) : (
-              <li className="text-gray-400">No subjects yet.</li>
+              <li className="text-gray-400 text-sm sm:text-base">
+                No subjects yet.
+              </li>
             )}
           </ul>
         </Card>

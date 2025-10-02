@@ -1,3 +1,4 @@
+// src/pages/AddMarks.jsx
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import Card from "../components/Card";
@@ -12,7 +13,7 @@ export default function AddMarks() {
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState(null);
 
-  // Fetch subjects from DB
+  // Fetch subjects
   const fetchSubjects = async () => {
     const { data: userData } = await supabase.auth.getUser();
     const user = userData?.user;
@@ -30,7 +31,7 @@ export default function AddMarks() {
     }
   };
 
-  // Fetch marks from DB
+  // Fetch marks
   const fetchMarks = async () => {
     setLoading(true);
     const { data: userData } = await supabase.auth.getUser();
@@ -132,7 +133,8 @@ export default function AddMarks() {
       </h1>
 
       <Card>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+        {/* Responsive form grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
           <div>
             <label className="text-sm text-gray-300">Subject</label>
             <select
@@ -182,7 +184,8 @@ export default function AddMarks() {
           </div>
         </div>
 
-        <div className="flex gap-2">
+        {/* Buttons */}
+        <div className="flex flex-wrap gap-2">
           {editId ? (
             <>
               <button
@@ -213,55 +216,89 @@ export default function AddMarks() {
         <Card title="Your Marks">
           {loading ? (
             <p>Loading...</p>
+          ) : marks.length === 0 ? (
+            <p className="text-gray-400">No marks yet.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left">
-                <thead>
-                  <tr className="text-sm text-gray-400">
-                    <th className="p-2">Subject</th>
-                    <th className="p-2">MCQ</th>
-                    <th className="p-2">Essay</th>
-                    <th className="p-2">Total</th>
-                    <th className="p-2">Message</th>
-                    <th className="p-2">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {marks.map((m) => (
-                    <tr key={m.id} className="border-t border-white/5">
-                      <td className="p-2">{m.subject}</td>
-                      <td className="p-2">{m.mcq}</td>
-                      <td className="p-2">{m.essay}</td>
-                      <td className="p-2">{(m.mcq || 0) + (m.essay || 0)}</td>
-                      <td className="p-2">{m.message || "-"}</td>
-                      <td className="p-2">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => startEdit(m)}
-                            className="px-2 py-1 bg-white/5 rounded"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => deleteMark(m.id)}
-                            className="px-2 py-1 bg-red-500/10 text-red-400 rounded"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
+            <>
+              {/* Table view for medium+ screens */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead>
+                    <tr className="text-gray-400">
+                      <th className="p-2">Subject</th>
+                      <th className="p-2">MCQ</th>
+                      <th className="p-2">Essay</th>
+                      <th className="p-2">Total</th>
+                      <th className="p-2">Message</th>
+                      <th className="p-2">Actions</th>
                     </tr>
-                  ))}
-                  {marks.length === 0 && (
-                    <tr>
-                      <td colSpan="6" className="p-4 text-gray-400">
-                        No marks yet.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {marks.map((m) => (
+                      <tr key={m.id} className="border-t border-white/5">
+                        <td className="p-2">{m.subject}</td>
+                        <td className="p-2">{m.mcq}</td>
+                        <td className="p-2">{m.essay}</td>
+                        <td className="p-2">{(m.mcq || 0) + (m.essay || 0)}</td>
+                        <td className="p-2">{m.message || "-"}</td>
+                        <td className="p-2">
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              onClick={() => startEdit(m)}
+                              className="px-2 py-1 bg-white/5 rounded"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => deleteMark(m.id)}
+                              className="px-2 py-1 bg-red-500/10 text-red-400 rounded"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Card list view for small screens */}
+              <div className="space-y-3 md:hidden">
+                {marks.map((m) => (
+                  <div
+                    key={m.id}
+                    className="p-3 bg-white/5 rounded flex flex-col gap-2"
+                  >
+                    <div className="flex justify-between">
+                      <span className="font-semibold">{m.subject}</span>
+                      <span className="text-gray-400">
+                        Total: {(m.mcq || 0) + (m.essay || 0)}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-300">
+                      <p>MCQ: {m.mcq}</p>
+                      <p>Essay: {m.essay}</p>
+                      <p>Message: {m.message || "-"}</p>
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => startEdit(m)}
+                        className="px-2 py-1 bg-white/5 rounded"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteMark(m.id)}
+                        className="px-2 py-1 bg-red-500/10 text-red-400 rounded"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </Card>
       </div>

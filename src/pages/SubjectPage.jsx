@@ -47,25 +47,27 @@ export default function SubjectPage() {
   }, [subject]);
 
   return (
-    <div className="p-6 min-h-screen">
-      <h1 className="text-3xl font-bold text-cyan-300 mb-4">
+    <div className="p-4 sm:p-6 min-h-screen">
+      <h1 className="text-2xl sm:text-3xl font-bold text-cyan-300 mb-2 sm:mb-4">
         {capitalizedSubject}
       </h1>
-      <p className="text-gray-300 mb-6">
+      <p className="text-gray-300 mb-4 sm:mb-6 text-sm sm:text-base">
         Your {capitalizedSubject} marks and progress.
       </p>
 
-      <Card>
-        <h2 className="text-xl font-semibold text-white mb-4">
+      <Card className="w-full overflow-x-auto">
+        <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4">
           {capitalizedSubject} Progress
         </h2>
 
-        <CenterArea
-          subject={capitalizedSubject}
-          showStats={true}
-          chartHeight={350}
-          marks={marks} // pass filtered marks
-        />
+        <div className="w-full">
+          <CenterArea
+            subject={capitalizedSubject}
+            showStats={true}
+            chartHeight={350}
+            marks={marks} // pass filtered marks
+          />
+        </div>
       </Card>
     </div>
   );

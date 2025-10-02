@@ -93,14 +93,13 @@ export default function PlanStudying() {
     fetchSessions();
   };
 
-  // prepare chart data for line chart
+  // prepare chart data
   const prepareChartData = () => {
     const subjects = userSubjects.map((s) => s.name);
-
-    // get all unique dates
     const dates = Array.from(
       new Set(sessions.map((s) => s.session_date))
     ).sort();
+
     return dates.map((date) => {
       const entry = { date };
       subjects.forEach((s) => {
@@ -117,18 +116,20 @@ export default function PlanStudying() {
   const chartData = prepareChartData();
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold text-cyan-300 mb-4">Plan Studying</h1>
+    <div className="p-4 sm:p-6 w-full">
+      <h1 className="text-xl sm:text-2xl font-bold text-cyan-300 mb-4 text-center sm:text-left">
+        Plan Studying
+      </h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Input form */}
         <Card>
-          <div>
+          <div className="flex flex-col">
             <label className="text-sm text-gray-300">Subject</label>
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full p-2 rounded bg-white/5 mb-3"
+              className="w-full p-2 rounded bg-white/5 mb-3 text-white"
             >
               {userSubjects.map((s) => (
                 <option key={s.id}>{s.name}</option>
@@ -141,7 +142,7 @@ export default function PlanStudying() {
               onChange={(e) => setTarget(e.target.value)}
               type="number"
               min="0"
-              className="w-full p-2 rounded bg-white/5 mb-3"
+              className="w-full p-2 rounded bg-white/5 mb-3 text-white"
             />
 
             <label className="text-sm text-gray-300">Actual minutes</label>
@@ -150,12 +151,12 @@ export default function PlanStudying() {
               onChange={(e) => setActual(e.target.value)}
               type="number"
               min="0"
-              className="w-full p-2 rounded bg-white/5 mb-3"
+              className="w-full p-2 rounded bg-white/5 mb-3 text-white"
             />
 
             <button
               onClick={addSession}
-              className="px-4 py-2 bg-cyan-500 text-black rounded"
+              className="px-4 py-2 bg-cyan-500 text-black rounded w-full sm:w-auto"
             >
               Add Session
             </button>
@@ -164,14 +165,14 @@ export default function PlanStudying() {
 
         {/* Graph */}
         <Card className="lg:col-span-2">
-          <h3 className="text-white font-semibold mb-3">
+          <h3 className="text-white font-semibold mb-3 text-center sm:text-left">
             Ideal vs Real Study Time
           </h3>
-          <p className="text-gray-400 mb-2 text-sm">
+          <p className="text-gray-400 mb-2 text-sm text-center sm:text-left">
             Each line = one subject. X = Session date, Y = Minutes.
           </p>
 
-          <div style={{ height: 400 }}>
+          <div className="w-full h-[300px] sm:h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData}>
                 <XAxis

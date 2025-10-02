@@ -168,7 +168,7 @@ export default function CenterArea({
                       }}
                     />
                     <Legend
-                      verticalAlign="top"
+                      verticalAlign="bottom"
                       wrapperStyle={{ color: "#fff" }}
                     />
                     <Area

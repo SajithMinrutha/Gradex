@@ -29,7 +29,9 @@ export default function AuthForm({ mode = "signin" }) {
   useEffect(() => {
     const check = async () => {
       const { data } = await supabase.auth.getSession();
-      if (data?.session) navigate("/dashboard");
+      if (data?.session && data.session.user?.email_confirmed_at) {
+        navigate("/dashboard");
+      }
     };
     check();
   }, [navigate]);
@@ -56,6 +58,13 @@ export default function AuthForm({ mode = "signin" }) {
           password,
         });
         if (error) throw error;
+
+        // ✅ Check if email is verified
+        if (!data.user?.email_confirmed_at) {
+          setErrorMsg("Please verify your email before signing in.");
+          return;
+        }
+
         navigate("/dashboard");
       } else {
         if (password !== confirmPassword)

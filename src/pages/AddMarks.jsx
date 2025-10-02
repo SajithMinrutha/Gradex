@@ -1,11 +1,10 @@
-// src/pages/AddMarks.jsx
 import { useEffect, useState } from "react";
 import { supabase } from "../supabaseClient";
 import Card from "../components/Card";
 
 export default function AddMarks() {
-  const [subjects, setSubjects] = useState(["Maths", "Physics", "Chemistry"]);
-  const [subject, setSubject] = useState("Maths");
+  const [subjects, setSubjects] = useState([]);
+  const [subject, setSubject] = useState("");
   const [mcq, setMcq] = useState("");
   const [essay, setEssay] = useState("");
   const [message, setMessage] = useState("");
@@ -13,6 +12,25 @@ export default function AddMarks() {
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState(null);
 
+  // Fetch subjects from DB
+  const fetchSubjects = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData?.user;
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("subjects")
+      .select("name")
+      .eq("user_id", user.id)
+      .order("id", { ascending: true });
+
+    if (!error && data) {
+      setSubjects(data.map((s) => s.name));
+      if (!subject) setSubject(data[0]?.name || "");
+    }
+  };
+
+  // Fetch marks from DB
   const fetchMarks = async () => {
     setLoading(true);
     const { data: userData } = await supabase.auth.getUser();
@@ -32,6 +50,7 @@ export default function AddMarks() {
   };
 
   useEffect(() => {
+    fetchSubjects();
     fetchMarks();
   }, []);
 
@@ -45,7 +64,7 @@ export default function AddMarks() {
     setMcq("");
     setEssay("");
     setMessage("");
-    setSubject(subjects[0]);
+    setSubject(subjects[0] || "");
     setEditId(null);
   };
 
@@ -111,6 +130,7 @@ export default function AddMarks() {
       <h1 className="text-2xl font-bold text-cyan-300 mb-4">
         Add / Edit Marks
       </h1>
+
       <Card>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
           <div>

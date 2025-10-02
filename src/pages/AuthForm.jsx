@@ -26,7 +26,6 @@ export default function AuthForm({ mode = "signin" }) {
 
   const navigate = useNavigate();
 
-  // Redirect if already logged in
   useEffect(() => {
     const check = async () => {
       const { data } = await supabase.auth.getSession();
@@ -59,21 +58,7 @@ export default function AuthForm({ mode = "signin" }) {
         });
         if (error) throw error;
 
-        const { data: userData } = await supabase.auth.getUser();
-        const user = userData?.user;
-
-        if (!user) throw new Error("User not found.");
-
-        // Check email verification
-        if (!user.email_confirmed_at) {
-          await supabase.auth.signOut();
-          throw new Error(
-            "Please verify your email first. Check your inbox for the verification link."
-          );
-        }
-
-        // Login success
-        navigate("/dashboard");
+        navigate("/dashboard"); // Login works now
       } else {
         // Sign up
         if (password !== confirmPassword)
@@ -89,24 +74,32 @@ export default function AuthForm({ mode = "signin" }) {
 
         if (error) throw error;
 
-        const user = data.user;
-        if (user) {
-          // Insert profile
+        // ⚡ Insert into names table (id, name, birthday)
+        if (data?.user) {
           await supabase
-            .from("profiles")
-            .insert([{ id: user.id, name, birthday, theme: "dark" }]);
+            .from("names")
+            .insert([{ id: data.user.id, name: name, birthday: birthday }]);
 
-          // Insert subjects
-          const cleaned = subjects.filter((s) => s.trim() !== "");
-          if (cleaned.length > 0) {
-            const rows = cleaned.map((s) => ({ user_id: user.id, name: s }));
-            await supabase.from("subjects").insert(rows);
+          // ✅ Insert subjects into subjects table
+          const subjectsToInsert = subjects
+            .map((s) => s.trim())
+            .filter((s) => s);
+          if (subjectsToInsert.length > 0) {
+            await supabase.from("subjects").insert(
+              subjectsToInsert.map((s) => ({
+                user_id: data.user.id,
+                name: s,
+              }))
+            );
           }
         }
 
+        // Show message immediately
         setSuccessMsg(
-          "✅ Account created. Please verify your email before signing in."
+          "Account created. Please verify your email before signing in."
         );
+
+        // Reset form fields
         setEmail("");
         setPassword("");
         setConfirmPassword("");
@@ -215,7 +208,7 @@ export default function AuthForm({ mode = "signin" }) {
                 ))}
                 <button
                   type="button"
-                  className="mt-2 text-cyan-400"
+                  className="mt-2 text-cyan-400 cursor-pointer"
                   onClick={handleAddSubject}
                 >
                   + Add Subject
@@ -237,7 +230,6 @@ export default function AuthForm({ mode = "signin" }) {
             />
           </div>
 
-          {/* Confirm password for signup */}
           {authMode === "signup" && (
             <div className="flex items-center gap-2 bg-white/10 p-2 rounded">
               <Lock size={18} />
@@ -255,7 +247,7 @@ export default function AuthForm({ mode = "signin" }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-cyan-500 text-black rounded font-semibold hover:bg-cyan-400 transition"
+            className="w-full py-2 bg-cyan-500 text-black rounded font-semibold cursor-pointer hover:bg-cyan-400 transition"
           >
             {loading
               ? "Please wait..."
@@ -265,8 +257,7 @@ export default function AuthForm({ mode = "signin" }) {
           </button>
         </form>
 
-        {/* Toggle */}
-        <p className="mt-4 text-center text-gray-300">
+        <p className="mt-4 text-center text-gray-300 cursor-pointer">
           {authMode === "signin"
             ? "Don't have an account?"
             : "Already have an account?"}{" "}
@@ -274,7 +265,7 @@ export default function AuthForm({ mode = "signin" }) {
             onClick={() =>
               setAuthMode(authMode === "signin" ? "signup" : "signin")
             }
-            className="text-cyan-400 ml-1 font-semibold"
+            className="text-cyan-400 ml-1 font-semibold cursor-pointer"
           >
             {authMode === "signin" ? "Sign Up" : "Sign In"}
           </button>

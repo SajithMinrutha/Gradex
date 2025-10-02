@@ -68,22 +68,22 @@ export default function Dashboard() {
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 ">
             <button
               onClick={() => navigate("/add-marks")}
-              className="px-4 py-2 bg-cyan-500 text-black rounded-md"
+              className="px-4 py-2 bg-cyan-500 text-black rounded-md cursor-pointer"
             >
               Add Marks
             </button>
             <button
               onClick={() => navigate("/todo")}
-              className="px-4 py-2 bg-white/5 text-white rounded-md"
+              className="px-4 py-2 bg-white/5 text-white rounded-md cursor-pointer"
             >
               Manage ToDos
             </button>
             <button
               onClick={() => navigate("/plan-studying")}
-              className="px-4 py-2 bg-white/5 text-white rounded-md"
+              className="px-4 py-2 bg-white/5 text-white rounded-md cursor-pointer"
             >
               Plan Studying
             </button>

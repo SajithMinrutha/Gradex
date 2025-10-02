@@ -1,4 +1,3 @@
-// src/App.jsx
 import {
   BrowserRouter as Router,
   Routes,
@@ -14,15 +13,13 @@ import TopBar from "./components/TopBar";
 // Pages
 import Landing from "./pages/Landing";
 import Dashboard from "./pages/Dashboard";
-import Maths from "./pages/Maths";
-import Physics from "./pages/Physics";
-import Chemistry from "./pages/Chemistry";
 import AddMarks from "./pages/AddMarks";
 import ToDo from "./pages/ToDo";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import PlanStudying from "./pages/PlanStudying";
 import Settings from "./pages/Settings";
+import SubjectPage from "./pages/SubjectPage";
 
 // Protected Route
 function ProtectedRoute({ children }) {
@@ -38,7 +35,6 @@ function ProtectedRoute({ children }) {
 
     getSession();
 
-    // Listen for auth changes
     const { data: listener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
@@ -49,10 +45,25 @@ function ProtectedRoute({ children }) {
   }, []);
 
   if (loading) return <div>Loading...</div>;
-
   if (!session) return <Navigate to="/login" replace />;
 
   return children;
+}
+
+// Auto-refresh wrapper HOC
+function withAutoRefresh(PageComponent, interval = 5000) {
+  return function Wrapper(props) {
+    const [, setTick] = useState(0);
+
+    useEffect(() => {
+      const timer = setInterval(() => {
+        setTick((tick) => tick + 1);
+      }, interval);
+      return () => clearInterval(timer);
+    }, []);
+
+    return <PageComponent {...props} />;
+  };
 }
 
 function AppLayout() {
@@ -68,63 +79,42 @@ function AppLayout() {
                 path="dashboard"
                 element={
                   <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="maths"
-                element={
-                  <ProtectedRoute>
-                    <Maths />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="physics"
-                element={
-                  <ProtectedRoute>
-                    <Physics />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="chemistry"
-                element={
-                  <ProtectedRoute>
-                    <Chemistry />
+                    {withAutoRefresh(Dashboard)()}
                   </ProtectedRoute>
                 }
               />
               <Route
                 path="add-marks"
                 element={
-                  <ProtectedRoute>
-                    <AddMarks />
-                  </ProtectedRoute>
+                  <ProtectedRoute>{withAutoRefresh(AddMarks)()}</ProtectedRoute>
                 }
               />
               <Route
                 path="todo"
                 element={
-                  <ProtectedRoute>
-                    <ToDo />
-                  </ProtectedRoute>
+                  <ProtectedRoute>{withAutoRefresh(ToDo)()}</ProtectedRoute>
                 }
               />
               <Route
                 path="plan-studying"
                 element={
                   <ProtectedRoute>
-                    <PlanStudying />
+                    {withAutoRefresh(PlanStudying)()}
                   </ProtectedRoute>
                 }
               />
               <Route
                 path="settings"
                 element={
+                  <ProtectedRoute>{withAutoRefresh(Settings)()}</ProtectedRoute>
+                }
+              />
+              {/* Dynamic subject pages */}
+              <Route
+                path=":subject"
+                element={
                   <ProtectedRoute>
-                    <Settings />
+                    {withAutoRefresh(SubjectPage)()}
                   </ProtectedRoute>
                 }
               />
@@ -138,16 +128,43 @@ function AppLayout() {
 }
 
 function App() {
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    const getSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session);
+      setLoading(false);
+    };
+    getSession();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => setSession(session)
+    );
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  if (loading) return <div>Loading...</div>;
+
   return (
     <Router>
       <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Landing />} />
+        {/* Landing page always accessible via Menu logo */}
+        <Route path="/" element={<Landing isLoggedIn={!!session} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
 
         {/* Protected app routes */}
-        <Route path="/*" element={<AppLayout />} />
+        <Route
+          path="/*"
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </Router>
   );

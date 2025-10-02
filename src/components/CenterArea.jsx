@@ -12,14 +12,24 @@ import {
 } from "recharts";
 import Card from "./Card";
 
-// neon colors
-const neonColors = {
-  Maths: { MCQ: "#3b82f6", Essay: "#7c3aed", Total: "#60a5fa" },
-  Physics: { MCQ: "#06b6d4", Essay: "#0891b2", Total: "#22d3ee" },
-  Chemistry: { MCQ: "#f472b6", Essay: "#ec4899", Total: "#fb7185" },
-};
+// Neon color palettes
+const palettes = [
+  ["#3b82f6", "#60a5fa", "#93c5fd"],
+  ["#ec4899", "#f472b6", "#f9a8d4"],
+  ["#10b981", "#34d399", "#6ee7b7"],
+  ["#f59e0b", "#fbbf24", "#fde68a"],
+  ["#6366f1", "#818cf8", "#a5b4fc"],
+  ["#f87171", "#fb7185", "#fda4af"],
+  ["#06b6d4", "#22d3ee", "#67e8f9"],
+  ["#8b5cf6", "#a78bfa", "#c4b5fd"],
+];
 
-const defaultSubjects = ["Maths", "Physics", "Chemistry"];
+function getPaletteForSubject(subject) {
+  const index =
+    subject.split("").reduce((sum, c) => sum + c.charCodeAt(0), 0) %
+    palettes.length;
+  return palettes[index];
+}
 
 function calcStats(data) {
   if (!data || data.length === 0) return { avg: "-", std: "-", deltaPct: "-" };
@@ -40,17 +50,18 @@ function calcStats(data) {
 }
 
 export default function CenterArea({
-  subject,
+  subject, // optional
   showStats = true,
   chartHeight = 160,
 }) {
   const [marksData, setMarksData] = useState({});
   const [loading, setLoading] = useState(true);
-  const subjects = subject ? [subject] : defaultSubjects;
+  const [subjects, setSubjects] = useState([]);
 
   useEffect(() => {
     let mounted = true;
-    const fetchAll = async () => {
+
+    const fetchData = async () => {
       setLoading(true);
       const { data: userData } = await supabase.auth.getUser();
       const user = userData?.user;
@@ -60,21 +71,39 @@ export default function CenterArea({
         return;
       }
 
-      const { data, error } = await supabase
+      // Fetch subjects dynamically
+      const { data: subjectsData } = await supabase
+        .from("subjects")
+        .select("name")
+        .eq("user_id", user.id)
+        .order("id", { ascending: true });
+
+      const subjectsList = subjectsData?.map((s) => s.name) || [];
+      if (mounted) setSubjects(subjectsList);
+
+      // Fetch marks
+      const { data: marks, error } = await supabase
         .from("marks")
         .select("*")
         .eq("user_id", user.id)
         .order("id", { ascending: true });
 
       if (error) {
-        console.error(error);
+        console.error("Error fetching marks:", error);
+        setMarksData({});
         setLoading(false);
         return;
       }
 
+      // Only fetch single subject if prop is passed
+      const targetSubjects = subject ? [subject] : subjectsList;
+
       const grouped = {};
-      for (const s of subjects) {
-        const list = (data || []).filter((r) => r.subject === s);
+      targetSubjects.forEach((s) => {
+        // ✅ Case-insensitive match for subjects
+        const list = (marks || []).filter(
+          (m) => m.subject.toLowerCase() === s.toLowerCase()
+        );
         grouped[s] = list.map((m, idx) => ({
           id: m.id,
           exam: `Test ${idx + 1}`,
@@ -82,82 +111,93 @@ export default function CenterArea({
           Essay: m.essay ?? 0,
           Total: (m.mcq ?? 0) + (m.essay ?? 0),
         }));
-      }
+      });
+
       if (mounted) {
         setMarksData(grouped);
         setLoading(false);
       }
     };
-    fetchAll();
-    return () => {
-      mounted = false;
-    };
+
+    fetchData();
+    return () => (mounted = false);
   }, [subject]);
 
   if (loading) return <div className="p-6 text-white">Loading...</div>;
+  if (!marksData || Object.keys(marksData).length === 0)
+    return <div className="p-6 text-white">No marks available yet.</div>;
 
   return (
     <div
       className={`grid ${
-        subjects.length > 1 ? "grid-cols-1 md:grid-cols-3 gap-6" : ""
+        subjects.length > 1 && !subject
+          ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          : ""
       }`}
     >
-      {subjects.map((s) => {
+      {Object.keys(marksData).map((s) => {
         const data = marksData[s] || [];
         const stats = calcStats(data);
+        const palette = getPaletteForSubject(s);
+
         return (
           <Card key={s}>
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">{s}</h3>
+              <h3 className="text-lg font-semibold text-white">{s}</h3>
             </div>
 
-            {/* dynamic height for graphs */}
-            <div className="w-full" style={{ height: chartHeight }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={data}>
-                  <XAxis
-                    dataKey="exam"
-                    axisLine={false}
-                    tickLine={false}
-                    stroke="#93c5fd"
-                  />
-                  <YAxis axisLine={false} tickLine={false} stroke="#93c5fd" />
-                  <Tooltip
-                    contentStyle={{
-                      background: "rgba(0,0,0,0.7)",
-                      color: "#fff",
-                    }}
-                  />
-                  <Legend
-                    verticalAlign="top"
-                    wrapperStyle={{ color: "#fff" }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="MCQ"
-                    stroke={neonColors[s].MCQ}
-                    fill={neonColors[s].MCQ + "22"}
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="Essay"
-                    stroke={neonColors[s].Essay}
-                    fill={neonColors[s].Essay + "22"}
-                    strokeWidth={2}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="Total"
-                    stroke={neonColors[s].Total}
-                    fill={neonColors[s].Total + "18"}
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            {data.length === 0 ? (
+              <div className="text-gray-400 p-6 text-center">
+                No marks recorded yet for {s}.
+              </div>
+            ) : (
+              <div className="w-full" style={{ height: chartHeight }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={data}>
+                    <XAxis
+                      dataKey="exam"
+                      axisLine={false}
+                      tickLine={false}
+                      stroke="#93c5fd"
+                    />
+                    <YAxis axisLine={false} tickLine={false} stroke="#93c5fd" />
+                    <Tooltip
+                      contentStyle={{
+                        background: "rgba(0,0,0,0.7)",
+                        color: "#fff",
+                      }}
+                    />
+                    <Legend
+                      verticalAlign="top"
+                      wrapperStyle={{ color: "#fff" }}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="MCQ"
+                      stroke={palette[0]}
+                      fill={palette[0] + "33"}
+                      strokeWidth={2}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="Essay"
+                      stroke={palette[1]}
+                      fill={palette[1] + "33"}
+                      strokeWidth={2}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="Total"
+                      stroke={palette[2]}
+                      fill={palette[2] + "22"}
+                      strokeWidth={2}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
 
-            {showStats && (
+            {showStats && data.length > 0 && (
               <div className="mt-3 text-sm text-gray-200">
                 <div className="flex justify-between">
                   <span>Average</span>

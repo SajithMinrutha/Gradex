@@ -11,16 +11,16 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleSupabaseRedirect = async () => {
       try {
-        // Parse URL hash & get session
+        // Get session from URL hash and store in Supabase client
         const { data, error } = await supabase.auth.getSessionFromUrl({
           storeSession: true,
         });
         if (error) throw error;
 
-        setLoading(false);
+        // Clean the URL (remove access_token hash)
+        window.history.replaceState({}, document.title, "/auth/callback");
 
-        // Optionally redirect to dashboard automatically
-        // navigate("/dashboard");
+        setLoading(false);
       } catch (err) {
         setError(err.message);
         setLoading(false);
@@ -28,7 +28,7 @@ export default function AuthCallback() {
     };
 
     handleSupabaseRedirect();
-  }, [navigate]);
+  }, []);
 
   if (loading) {
     return (

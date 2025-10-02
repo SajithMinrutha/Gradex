@@ -11,15 +11,13 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleSupabaseRedirect = async () => {
       try {
-        // Get session from URL hash and store in Supabase client
         const { data, error } = await supabase.auth.getSessionFromUrl({
           storeSession: true,
         });
         if (error) throw error;
 
-        // Clean the URL to remove the access_token hash
+        // Clean URL so #access_token is gone
         window.history.replaceState({}, document.title, "/auth/callback");
-
         setLoading(false);
       } catch (err) {
         setError(err.message);
@@ -30,7 +28,7 @@ export default function AuthCallback() {
     handleSupabaseRedirect();
   }, []);
 
-  if (loading) {
+  if (loading)
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-[#030416] via-[#071029] to-[#071022] text-white">
         <p className="text-lg sm:text-xl animate-pulse">
@@ -38,11 +36,10 @@ export default function AuthCallback() {
         </p>
       </div>
     );
-  }
 
-  if (error) {
+  if (error)
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-[#030416] via-[#071029] to-[#071022] text-white p-4">
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-[#030416] via-[#071029] to-[#071022] p-4">
         <div className="bg-[#071029]/70 backdrop-blur-lg border border-white/10 rounded-2xl p-8 text-center max-w-md w-full">
           <p className="text-red-400 font-semibold text-lg">
             Verification Error
@@ -57,7 +54,6 @@ export default function AuthCallback() {
         </div>
       </div>
     );
-  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-[#030416] via-[#071029] to-[#071022] p-4">

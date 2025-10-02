@@ -35,7 +35,7 @@ export default function Menu() {
   }, []);
 
   const staticItems = [
-    { name: "Dashboard", icon: <HomeIcon />, path: "/" },
+    { name: "Dashboard", icon: <HomeIcon />, path: "/dashbaord" },
     { name: "Add Marks", icon: <AddBoxIcon />, path: "/add-marks" },
     { name: "ToDo", icon: <TaskAltIcon />, path: "/todo" },
     { name: "Study Planner", icon: <ScheduleIcon />, path: "/plan-studying" },

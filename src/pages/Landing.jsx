@@ -34,9 +34,9 @@ export default function Landing() {
           <a href="#donate" className="hover:text-cyan-300 cursor-pointer">
             Donate
           </a>
-          <a href="#contact" className="hover:text-cyan-300 cursor-pointer">
+          {/* <a href="#contact" className="hover:text-cyan-300 cursor-pointer">
             Contact
-          </a>
+          </a> */}
         </nav>
         <button
           onClick={() => navigate("/login")}
@@ -49,7 +49,7 @@ export default function Landing() {
       {/* Hero Section */}
       <section
         id="hero"
-        className="flex flex-col lg:flex-row items-center justify-between px-8 lg:px-20 py-24"
+        className="flex flex-col lg:flex-row items-center justify-between px-8 lg:px-20 py-30"
       >
         <div className="lg:w-1/2 space-y-6">
           <h2 className="text-4xl lg:text-6xl font-bold leading-tight text-cyan-300 drop-shadow-lg flex items-center gap-4">
@@ -78,7 +78,7 @@ export default function Landing() {
       {/* Features Section */}
       <section
         id="features"
-        className="px-8 lg:px-20 py-24 bg-[#071029]/70 backdrop-blur-lg border-t border-white/10"
+        className="py-40 my-23 flex flex-col justify-center px-8 lg:px-20 bg-[#071029]/70 backdrop-blur-lg border-t border-white/10"
       >
         <h3 className="text-3xl font-bold text-center text-cyan-300 mb-12">
           Features
@@ -132,7 +132,10 @@ export default function Landing() {
       </section>
 
       {/* About Section */}
-      <section id="about" className="px-8 lg:px-20 py-24">
+      <section
+        id="about"
+        className="h-screen flex flex-col justify-center px-8 lg:px-20"
+      >
         <h3 className="text-3xl font-bold text-center text-cyan-300 mb-12">
           About Gradexa
         </h3>
@@ -155,7 +158,7 @@ export default function Landing() {
       {/* Donation Section */}
       <section
         id="donate"
-        className="px-8 lg:px-20 py-24 bg-[#071029]/70 backdrop-blur-lg border-t border-white/10 text-center"
+        className="py-50 flex flex-col justify-center items-center px-8 lg:px-20 bg-[#071029]/70 backdrop-blur-lg border-t border-white/10 text-center"
       >
         <VolunteerActivismIcon sx={{ fontSize: 60, color: "#0ff" }} />
         <h3 className="text-3xl font-bold text-cyan-300 mt-4">
@@ -176,10 +179,7 @@ export default function Landing() {
       </section>
 
       {/* Footer */}
-      <footer
-        id="contact"
-        className="px-6 py-8 bg-[#030416] border-t border-white/10 text-center text-gray-400 flex flex-col items-center gap-2"
-      >
+      <footer className="min-h-[30vh] flex flex-col justify-center items-center gap-2 px-6 py-8 bg-[#030416] border-t border-white/10 text-gray-400 text-center">
         <EmojiObjectsIcon sx={{ fontSize: 28, color: "#60f0ff" }} />
         <p className="text-sm">
           © {new Date().getFullYear()} Gradexa — Empowering Students Everywhere

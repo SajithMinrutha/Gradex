@@ -66,7 +66,7 @@ export default function AuthForm({ mode = "signin" }) {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: "https://gradexa.vercel.app/dashboard" },
+          options: { emailRedirectTo: "https://gradexa.vercel.app" },
         });
 
         if (error) throw error;

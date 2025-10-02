@@ -1,4 +1,3 @@
-// src/pages/AuthForm.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../supabaseClient";
@@ -13,7 +12,7 @@ import {
 } from "lucide-react";
 
 export default function AuthForm({ mode = "signin" }) {
-  const [authMode, setAuthMode] = useState(mode); // "signin" | "signup"
+  const [authMode, setAuthMode] = useState(mode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,13 +26,13 @@ export default function AuthForm({ mode = "signin" }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const check = async () => {
+    const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
       if (data?.session && data.session.user?.email_confirmed_at) {
         navigate("/dashboard");
       }
     };
-    check();
+    checkSession();
   }, [navigate]);
 
   const handleAddSubject = () => setSubjects([...subjects, ""]);
@@ -59,9 +58,11 @@ export default function AuthForm({ mode = "signin" }) {
         });
         if (error) throw error;
 
-        // ✅ Check if email is verified
-        if (!data.user?.email_confirmed_at) {
-          setErrorMsg("Please verify your email before signing in.");
+        if (!data.user.email_confirmed_at) {
+          setErrorMsg(
+            "Email not verified. Please check your inbox and verify your email."
+          );
+          await supabase.auth.signOut();
           return;
         }
 
@@ -75,15 +76,16 @@ export default function AuthForm({ mode = "signin" }) {
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: "https://gradexa.vercel.app" },
+          options: {
+            emailRedirectTo: "https://gradexa.vercel.app/auth/callback",
+          },
         });
-
         if (error) throw error;
 
         if (data?.user) {
           await supabase
             .from("names")
-            .insert([{ id: data.user.id, name: name, birthday: birthday }]);
+            .insert([{ id: data.user.id, name, birthday }]);
 
           const subjectsToInsert = subjects
             .map((s) => s.trim())
@@ -144,7 +146,6 @@ export default function AuthForm({ mode = "signin" }) {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
-          {/* Email */}
           <div className="flex items-center gap-2 bg-white/10 p-2 rounded">
             <Mail size={18} />
             <input
@@ -157,7 +158,6 @@ export default function AuthForm({ mode = "signin" }) {
             />
           </div>
 
-          {/* Name & Birthday for signup */}
           {authMode === "signup" && (
             <>
               <div className="flex items-center gap-2 bg-white/10 p-2 rounded">
@@ -225,7 +225,6 @@ export default function AuthForm({ mode = "signin" }) {
             </>
           )}
 
-          {/* Password */}
           <div className="flex items-center gap-2 bg-white/10 p-2 rounded">
             <Lock size={18} />
             <input

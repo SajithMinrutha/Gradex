@@ -20,6 +20,7 @@ import SignUp from "./pages/SignUp";
 import PlanStudying from "./pages/PlanStudying";
 import Settings from "./pages/Settings";
 import SubjectPage from "./pages/SubjectPage";
+import AuthCallback from "./pages/AuthCallback"; // new
 
 // Protected Route
 function ProtectedRoute({ children }) {
@@ -36,16 +37,16 @@ function ProtectedRoute({ children }) {
     getSession();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-      }
+      (_event, session) => setSession(session)
     );
 
     return () => listener.subscription.unsubscribe();
   }, []);
 
   if (loading) return <div>Loading...</div>;
-  if (!session) return <Navigate to="/login" replace />;
+  if (!session || !session.user?.email_confirmed_at) {
+    return <Navigate to="/login" replace />;
+  }
 
   return children;
 }
@@ -155,6 +156,9 @@ function App() {
         <Route path="/" element={<Landing isLoggedIn={!!session} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
+
+        {/* Email verification callback page */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
         {/* Protected app routes */}
         <Route

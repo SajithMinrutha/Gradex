@@ -61,17 +61,15 @@ export default function AddMarks() {
       return;
     }
 
-    await supabase
-      .from("marks")
-      .insert([
-        {
-          user_id: user.id,
-          subject,
-          mcq: Number(mcq),
-          essay: Number(essay),
-          message: message || null,
-        },
-      ]);
+    await supabase.from("marks").insert([
+      {
+        user_id: user.id,
+        subject,
+        mcq: Number(mcq),
+        essay: Number(essay),
+        message: message || null,
+      },
+    ]);
     clearForm();
     fetchMarks();
   };
@@ -131,7 +129,7 @@ export default function AddMarks() {
           </div>
 
           <div>
-            <label className="text-sm text-gray-300">MCQ (0-50)</label>
+            <label className="text-sm text-gray-300">MCQ</label>
             <input
               type="number"
               min="0"
@@ -143,7 +141,7 @@ export default function AddMarks() {
           </div>
 
           <div>
-            <label className="text-sm text-gray-300">Essay (0-50)</label>
+            <label className="text-sm text-gray-300">Essay</label>
             <input
               type="number"
               min="0"
